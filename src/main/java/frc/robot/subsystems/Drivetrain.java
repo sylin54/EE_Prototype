@@ -4,6 +4,9 @@
 
 package frc.robot.subsystems;
 
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.kinematics.DifferentialDriveOdometry;
+import edu.wpi.first.math.kinematics.DifferentialDriveOdometry3d;
 import edu.wpi.first.util.sendable.SendableRegistry;
 import edu.wpi.first.wpilibj.BuiltInAccelerometer;
 import edu.wpi.first.wpilibj.Encoder;
@@ -15,6 +18,7 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 public class Drivetrain extends SubsystemBase {
   private static final double kCountsPerRevolution = 1440.0;
   private static final double kWheelDiameterInch = 2.75591; // 70 mm
+  private static final double kWheelDiameterMeters = kWheelDiameterInch * 0.0254; // 70 mm in meters
 
   // The Romi has the left and right motors set to
   // PWM channels 0 and 1 respectively
@@ -36,6 +40,8 @@ public class Drivetrain extends SubsystemBase {
   // Set up the BuiltInAccelerometer
   private final BuiltInAccelerometer m_accelerometer = new BuiltInAccelerometer();
 
+  private final DifferentialDriveOdometry m_odometry;
+
   /** Creates a new Drivetrain. */
   public Drivetrain() {
     SendableRegistry.addChild(m_diffDrive, m_leftMotor);
@@ -50,6 +56,8 @@ public class Drivetrain extends SubsystemBase {
     m_leftEncoder.setDistancePerPulse((Math.PI * kWheelDiameterInch) / kCountsPerRevolution);
     m_rightEncoder.setDistancePerPulse((Math.PI * kWheelDiameterInch) / kCountsPerRevolution);
     resetEncoders();
+
+    m_odometry = new DifferentialDriveOdometry(Rotation2d.fromDegrees(m_gyro.getAngle()), getLeftDistanceMeter(), getRightDistanceMeter());
   }
 
   public void arcadeDrive(double xaxisSpeed, double zaxisRotate) {
@@ -69,16 +77,16 @@ public class Drivetrain extends SubsystemBase {
     return m_rightEncoder.get();
   }
 
-  public double getLeftDistanceInch() {
+  public double getLeftDistanceMeter() {
     return m_leftEncoder.getDistance();
   }
 
-  public double getRightDistanceInch() {
+  public double getRightDistanceMeter() {
     return m_rightEncoder.getDistance();
   }
 
   public double getAverageDistanceInch() {
-    return (getLeftDistanceInch() + getRightDistanceInch()) / 2.0;
+    return (getLeftDistanceMeter() + getRightDistanceMeter()) / 2.0;
   }
 
   /**
@@ -140,8 +148,12 @@ public class Drivetrain extends SubsystemBase {
     m_gyro.reset();
   }
 
+  public DifferentialDriveOdometry getOdometry() {
+    return m_odometry;
+  }
+
   @Override
   public void periodic() {
     // This method will be called once per scheduler run
-  }
+    m_odometry.update(Rotation2d.fromDegrees(m_gyro.getAngle()), getLeftDistanceMeter(), getRightDistanceMeter());
 }
