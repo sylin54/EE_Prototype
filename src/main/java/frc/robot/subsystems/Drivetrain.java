@@ -4,11 +4,20 @@
 
 package frc.robot.subsystems;
 
+import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.config.RobotConfig;
+import com.pathplanner.lib.controllers.PPLTVController;
+import com.pathplanner.lib.util.DriveFeedforwards;
+
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.math.kinematics.DifferentialDriveKinematics;
 import edu.wpi.first.math.kinematics.DifferentialDriveOdometry;
 import edu.wpi.first.math.kinematics.DifferentialDriveOdometry3d;
+import edu.wpi.first.math.kinematics.DifferentialDriveWheelSpeeds;
 import edu.wpi.first.util.sendable.SendableRegistry;
 import edu.wpi.first.wpilibj.BuiltInAccelerometer;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.motorcontrol.Spark;
@@ -19,6 +28,11 @@ public class Drivetrain extends SubsystemBase {
   private static final double kCountsPerRevolution = 1440.0;
   private static final double kWheelDiameterInch = 2.75591; // 70 mm
   private static final double kWheelDiameterMeters = kWheelDiameterInch * 0.0254; // 70 mm in meters
+
+  private static final double kTrackwidthMeters = 0.14; // 6 inches
+
+  DifferentialDriveKinematics kinematics = new DifferentialDriveKinematics(kTrackwidthMeters);
+
 
   // The Romi has the left and right motors set to
   // PWM channels 0 and 1 respectively
@@ -58,6 +72,33 @@ public class Drivetrain extends SubsystemBase {
     resetEncoders();
 
     m_odometry = new DifferentialDriveOdometry(Rotation2d.fromDegrees(m_gyro.getAngle()), getLeftDistanceMeter(), getRightDistanceMeter());
+
+    //create the robot config from the GUI settings. This will be used to configure the auto builder.
+    RobotConfig config = null;
+    try{
+      config = RobotConfig.fromGUISettings();
+    } catch (Exception e) {
+      // Handle exception as needed
+      e.printStackTrace();
+    }
+
+
+    AutoBuilder.configure(m_odometry::getPoseMeters, m_odometry::resetPose, this::getRobotRelativeSpeeds, this::driveFeedForwards, new PPLTVController(0.2), config, 
+    () -> {
+
+      var alliance = DriverStation.getAlliance().get();
+      if(alliance == DriverStation.Alliance.Red) {
+        return true;
+      } else {
+        return false;
+      }
+    }, this);
+
+
+
+
+
+
   }
 
   public void arcadeDrive(double xaxisSpeed, double zaxisRotate) {
@@ -151,6 +192,20 @@ public class Drivetrain extends SubsystemBase {
   public DifferentialDriveOdometry getOdometry() {
     return m_odometry;
   }
+
+  //get the robot relative chassiss speeds using motor speeds. This assumes zero drift.
+  public ChassisSpeeds getRobotRelativeSpeeds() {
+    DifferentialDriveWheelSpeeds wheelSpeeds = new DifferentialDriveWheelSpeeds(m_leftEncoder.getRate(), m_rightEncoder.getRate());
+
+    return kinematics.toChassisSpeeds(wheelSpeeds);
+  }
+
+  public void driveFeedForwards(ChassisSpeeds speeds, DriveFeedforwards driveFeedforwards) {
+      DifferentialDriveWheelSpeeds differentialDriveWheelSpeeds = kinematics.toWheelSpeeds(speeds);
+
+      m_diffDrive.tankDrive(differentialDriveWheelSpeeds.leftMetersPerSecond, differentialDriveWheelSpeeds.rightMetersPerSecond);
+    }
+
 
   @Override
   public void periodic() {
