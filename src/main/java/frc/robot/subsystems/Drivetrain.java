@@ -5,10 +5,10 @@
 package frc.robot.subsystems;
 
 import edu.wpi.first.math.Matrix;
+import edu.wpi.first.math.estimator.DifferentialDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.kinematics.DifferentialDriveOdometry;
-import edu.wpi.first.math.kinematics.DifferentialDriveOdometry3d;
+import edu.wpi.first.math.kinematics.DifferentialDriveKinematics;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.util.sendable.SendableRegistry;
@@ -44,7 +44,8 @@ public class Drivetrain extends SubsystemBase {
   // Set up the BuiltInAccelerometer
   private final BuiltInAccelerometer m_accelerometer = new BuiltInAccelerometer();
 
-  private final DifferentialDriveOdometry m_odometry;
+  private final DifferentialDrivePoseEstimator m_poseEstimator;
+  private final DifferentialDriveKinematics m_kinematics = new DifferentialDriveKinematics(kWheelDiameterMeters);
 
   /** Creates a new Drivetrain. */
   public Drivetrain() {
@@ -61,7 +62,7 @@ public class Drivetrain extends SubsystemBase {
     m_rightEncoder.setDistancePerPulse((Math.PI * kWheelDiameterInch) / kCountsPerRevolution);
     resetEncoders();
 
-    m_odometry = new DifferentialDriveOdometry(Rotation2d.fromDegrees(m_gyro.getAngle()), getLeftDistanceMeter(), getRightDistanceMeter());
+    m_poseEstimator = new DifferentialDrivePoseEstimator(m_kinematics, Rotation2d.fromDegrees(m_gyro.getAngle()), getLeftDistanceMeter(), getRightDistanceMeter(), new Pose2d());
   }
 
   public void arcadeDrive(double xaxisSpeed, double zaxisRotate) {
@@ -152,18 +153,19 @@ public class Drivetrain extends SubsystemBase {
     m_gyro.reset();
   }
 
-  public DifferentialDriveOdometry getOdometry() {
-    return m_odometry;
+  public DifferentialDrivePoseEstimator getPoseEstimator() {
+    return m_poseEstimator;
   }
 
   public void addVisionMeasurement(Pose2d visionRobotPoseMeters, double timestampSeconds, Matrix<N3, N1> visionMeasurementStdDevs) {
     // Update the odometry with the vision measurement
+    m_poseEstimator.addVisionMeasurement(visionRobotPoseMeters, timestampSeconds, visionMeasurementStdDevs);
     
   }
 
   @Override
   public void periodic() {
     // This method will be called once per scheduler run
-    m_odometry.update(Rotation2d.fromDegrees(m_gyro.getAngle()), getLeftDistanceMeter(), getRightDistanceMeter());
+    m_poseEstimator.update(Rotation2d.fromDegrees(m_gyro.getAngle()), getLeftDistanceMeter(), getRightDistanceMeter());
   }
 }
