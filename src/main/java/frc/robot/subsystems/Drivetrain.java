@@ -9,6 +9,7 @@ import com.pathplanner.lib.config.RobotConfig;
 import com.pathplanner.lib.controllers.PPLTVController;
 import com.pathplanner.lib.util.DriveFeedforwards;
 
+import edu.wpi.first.math.filter.LinearFilter;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.DifferentialDriveKinematics;
@@ -212,8 +213,13 @@ public class Drivetrain extends SubsystemBase {
     m_odometry.update(Rotation2d.fromDegrees(m_gyro.getAngle()), getLeftDistanceMeter(), getRightDistanceMeter());
 
     SmartDashboard.putNumber("DistanceMetersLeft", getLeftDistanceMeter());
-    SmartDashboard.putNumber("DistanceMetersRight", getLeftDistanceMeter());
+    SmartDashboard.putNumber("DistanceMetersRight", getRightDistanceMeter());
 
     m_field.setRobotPose(m_odometry.getPoseMeters());
+
+    double angle = m_odometry.getPoseMeters().getRotation().getDegrees();
+    SmartDashboard.putNumber("pose x", m_odometry.getPoseMeters().getX());
+    SmartDashboard.putNumber("pose y", m_odometry.getPoseMeters().getY());
+
   }
 }
