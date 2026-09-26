@@ -22,6 +22,8 @@ import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.motorcontrol.Spark;
 import edu.wpi.first.wpilibj.romi.RomiGyro;
+import edu.wpi.first.wpilibj.smartdashboard.Field2d;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 public class Drivetrain extends SubsystemBase {
@@ -33,6 +35,7 @@ public class Drivetrain extends SubsystemBase {
 
   DifferentialDriveKinematics kinematics = new DifferentialDriveKinematics(kTrackwidthMeters);
 
+  private final Field2d m_field = new Field2d();
 
   // The Romi has the left and right motors set to
   // PWM channels 0 and 1 respectively
@@ -67,8 +70,8 @@ public class Drivetrain extends SubsystemBase {
     m_rightMotor.setInverted(true);
 
     // Use inches as unit for encoder distances
-    m_leftEncoder.setDistancePerPulse((Math.PI * kWheelDiameterInch) / kCountsPerRevolution);
-    m_rightEncoder.setDistancePerPulse((Math.PI * kWheelDiameterInch) / kCountsPerRevolution);
+    m_leftEncoder.setDistancePerPulse((Math.PI * kWheelDiameterMeters) / kCountsPerRevolution);
+    m_rightEncoder.setDistancePerPulse((Math.PI * kWheelDiameterMeters) / kCountsPerRevolution);
     resetEncoders();
 
     m_odometry = new DifferentialDriveOdometry(Rotation2d.fromDegrees(m_gyro.getAngle()), getLeftDistanceMeter(), getRightDistanceMeter());
@@ -94,11 +97,7 @@ public class Drivetrain extends SubsystemBase {
       }
     }, this);
 
-
-
-
-
-
+    SmartDashboard.putData("Field", m_field);
   }
 
   public void arcadeDrive(double xaxisSpeed, double zaxisRotate) {
@@ -211,5 +210,10 @@ public class Drivetrain extends SubsystemBase {
   public void periodic() {
     // This method will be called once per scheduler run
     m_odometry.update(Rotation2d.fromDegrees(m_gyro.getAngle()), getLeftDistanceMeter(), getRightDistanceMeter());
+
+    SmartDashboard.putNumber("DistanceMetersLeft", getLeftDistanceMeter());
+    SmartDashboard.putNumber("DistanceMetersRight", getLeftDistanceMeter());
+
+    m_field.setRobotPose(m_odometry.getPoseMeters());
   }
 }
