@@ -163,7 +163,7 @@ public class Drivetrain extends SubsystemBase {
 
   /** Reset the gyro. */
   public void resetGyro() {
-    drivetrainAngleCalculator.reset(0);
+    drivetrainAngleCalculator.reset();
   }
 
   public DifferentialDriveOdometry getOdometry() {
