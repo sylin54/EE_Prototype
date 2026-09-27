@@ -53,7 +53,7 @@ public class Drivetrain extends SubsystemBase {
       new DifferentialDrive(m_leftMotor::set, m_rightMotor::set);
 
   // Set up the RomiGyro
-  private final RomiGyro m_gyro = new RomiGyro();
+  private final DrivetrainAngleCalculator drivetrainAngleCalculator = new DrivetrainAngleCalculator();
 
   // Set up the BuiltInAccelerometer
   private final BuiltInAccelerometer m_accelerometer = new BuiltInAccelerometer();
@@ -75,7 +75,7 @@ public class Drivetrain extends SubsystemBase {
     m_rightEncoder.setDistancePerPulse((Math.PI * kWheelDiameterMeters) / kCountsPerRevolution);
     resetEncoders();
 
-    m_odometry = new DifferentialDriveOdometry(Rotation2d.fromDegrees(m_gyro.getAngle()), getLeftDistanceMeter(), getRightDistanceMeter());
+    m_odometry = new DifferentialDriveOdometry(Rotation2d.fromDegrees(drivetrainAngleCalculator.getAngle()), getLeftDistanceMeter(), getRightDistanceMeter());
 
     //create the robot config from the GUI settings. This will be used to configure the auto builder.
     RobotConfig config = null;
@@ -157,36 +157,13 @@ public class Drivetrain extends SubsystemBase {
     return m_accelerometer.getZ();
   }
 
-  /**
-   * Current angle of the Romi around the X-axis.
-   *
-   * @return The current angle of the Romi in degrees
-   */
-  public double getGyroAngleX() {
-    return m_gyro.getAngleX();
-  }
-
-  /**
-   * Current angle of the Romi around the Y-axis.
-   *
-   * @return The current angle of the Romi in degrees
-   */
-  public double getGyroAngleY() {
-    return m_gyro.getAngleY();
-  }
-
-  /**
-   * Current angle of the Romi around the Z-axis.
-   *
-   * @return The current angle of the Romi in degrees
-   */
-  public double getGyroAngleZ() {
-    return m_gyro.getAngleZ();
+  public double getAngle() {
+    return drivetrainAngleCalculator.getAngle();
   }
 
   /** Reset the gyro. */
   public void resetGyro() {
-    m_gyro.reset();
+    drivetrainAngleCalculator.reset(0);
   }
 
   public DifferentialDriveOdometry getOdometry() {
@@ -210,7 +187,8 @@ public class Drivetrain extends SubsystemBase {
   @Override
   public void periodic() {
     // This method will be called once per scheduler run
-    m_odometry.update(Rotation2d.fromDegrees(m_gyro.getAngle()), getLeftDistanceMeter(), getRightDistanceMeter());
+    drivetrainAngleCalculator.update(getLeftDistanceMeter(), getRightDistanceMeter());
+    m_odometry.update(Rotation2d.fromDegrees(drivetrainAngleCalculator.getAngle()), getLeftDistanceMeter(), getRightDistanceMeter());
 
     SmartDashboard.putNumber("DistanceMetersLeft", getLeftDistanceMeter());
     SmartDashboard.putNumber("DistanceMetersRight", getRightDistanceMeter());
@@ -220,6 +198,8 @@ public class Drivetrain extends SubsystemBase {
     double angle = m_odometry.getPoseMeters().getRotation().getDegrees();
     SmartDashboard.putNumber("pose x", m_odometry.getPoseMeters().getX());
     SmartDashboard.putNumber("pose y", m_odometry.getPoseMeters().getY());
+
+    SmartDashboard.putNumber("angle", angle);
 
   }
 }

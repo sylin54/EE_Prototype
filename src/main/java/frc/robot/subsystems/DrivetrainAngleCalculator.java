@@ -1,7 +1,7 @@
 package frc.robot.subsystems;
 
 
-public class DrivetrainOdometryCalculator {
+public class DrivetrainAngleCalculator {
     private final double trackWidthMeters = 0.014;
     
     private double lastLeftDistance = 0;
@@ -20,6 +20,21 @@ public class DrivetrainOdometryCalculator {
 
         currentAngle += degrees;
 
+        lastLeftDistance = leftDistanceM;
+        lastRightDistance = rightDistanceM;
+
+
+        System.out.println("difference: " + difference);
+        System.out.println("degrees: " + degrees);
+
         return currentAngle;
+    }
+
+    public double getAngle() {
+        return currentAngle;
+    }
+
+    public void reset(double angle) {
+        currentAngle = angle;
     }
 }
