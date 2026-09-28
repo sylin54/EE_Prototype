@@ -4,6 +4,8 @@
 
 package frc.robot;
 
+import com.pathplanner.lib.util.DriveFeedforwards;
+
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -81,7 +83,7 @@ public class Robot extends TimedRobot {
   /** This function is called periodically during operator control. */
   @Override
   public void teleopPeriodic() {
-    m_robotContainer.getDrivetrain().driveFeedForwardsTest(new ChassisSpeeds(0.3, 0, 0));
+    m_robotContainer.getDrivetrain().driveFeedForwardsTest(new ChassisSpeeds(0.2, 0, 0.1));
   }
 
   @Override

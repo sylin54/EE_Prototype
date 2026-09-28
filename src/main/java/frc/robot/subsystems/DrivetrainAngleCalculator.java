@@ -15,7 +15,7 @@ public class DrivetrainAngleCalculator {
         double leftDifference = leftDistanceM - lastLeftDistance;
         double rightDifference = rightDistanceM - lastRightDistance;
 
-        double difference = rightDifference - leftDifference;
+        double difference = leftDifference - rightDifference;
 
         double radians = difference/trackWidthMeters;
 

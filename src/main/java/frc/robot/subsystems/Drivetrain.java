@@ -176,6 +176,11 @@ public class Drivetrain extends SubsystemBase {
   }
 
   public void driveFeedForwards(ChassisSpeeds speeds, DriveFeedforwards driveFeedforwards) {
+
+    SmartDashboard.putNumber("x speed ", speeds.vxMetersPerSecond);
+    SmartDashboard.putNumber("y speed ", speeds.vyMetersPerSecond);
+    SmartDashboard.putNumber("omega speed ", speeds.omegaRadiansPerSecond);
+
     DifferentialDriveWheelSpeeds differentialDriveWheelSpeeds = kinematics.toWheelSpeeds(speeds);
 
     double leftOutput = leftCalculator.calculate(m_leftEncoder.getRate(), differentialDriveWheelSpeeds.leftMetersPerSecond, "left motor");
@@ -187,13 +192,15 @@ public class Drivetrain extends SubsystemBase {
 
   public void driveFeedForwardsTest(ChassisSpeeds speeds) {
 
-      // DifferentialDriveWheelSpeeds differentialDriveWheelSpeeds = kinematics.toWheelSpeeds(speeds);
+    ChassisSpeeds newSpeeds =  new ChassisSpeeds(speeds.vxMetersPerSecond, speeds.vyMetersPerSecond, Math.toRadians(speeds.omegaRadiansPerSecond));
 
-      // double leftOutput = leftCalculator.calculate(m_leftEncoder.getRate(), differentialDriveWheelSpeeds.leftMetersPerSecond, "left motor");
-      // double rightOutput = rightCalculator.calculate(m_rightEncoder.getRate(), differentialDriveWheelSpeeds.rightMetersPerSecond, "right motor");
+    DifferentialDriveWheelSpeeds differentialDriveWheelSpeeds = kinematics.toWheelSpeeds(speeds);
 
-      // m_leftMotor.setVoltage(leftOutput);
-      // m_rightMotor.setVoltage(rightOutput);
+    double leftOutput = leftCalculator.calculate(m_leftEncoder.getRate(), differentialDriveWheelSpeeds.leftMetersPerSecond, "left motor");
+    double rightOutput = rightCalculator.calculate(m_rightEncoder.getRate(), differentialDriveWheelSpeeds.rightMetersPerSecond, "right motor");
+
+    m_leftMotor.setVoltage(leftOutput);
+    m_rightMotor.setVoltage(rightOutput);
   }
 
 
