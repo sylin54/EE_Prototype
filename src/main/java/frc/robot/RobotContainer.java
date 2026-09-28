@@ -9,9 +9,7 @@ import com.pathplanner.lib.auto.AutoBuilder;
 import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.XboxController;
-import frc.robot.commands.ArcadeDrive;
-import frc.robot.commands.AutonomousDistance;
-import frc.robot.commands.AutonomousTime;
+
 import frc.robot.subsystems.Drivetrain;
 import edu.wpi.first.wpilibj.romi.OnBoardIO;
 import edu.wpi.first.wpilibj.romi.OnBoardIO.ChannelMode;
@@ -71,7 +69,6 @@ public class RobotContainer {
   private void configureButtonBindings() {
     // Default command is arcade drive. This will run unless another command
     // is scheduled over it.
-    m_drivetrain.setDefaultCommand(getArcadeDriveCommand());
 
     // Example of how to use the onboard IO
     Trigger onboardButtonA = new Trigger(m_onboardIO::getButtonAPressed);
@@ -90,13 +87,8 @@ public class RobotContainer {
     return autoChooser.getSelected();
   }
 
-  /**
-   * Use this to pass the teleop command to the main {@link Robot} class.
-   *
-   * @return the command to run in teleop
-   */
-  public Command getArcadeDriveCommand() {
-    return new ArcadeDrive(
-        m_drivetrain, () -> -m_controller.getRawAxis(1), () -> -m_controller.getRawAxis(2));
+  public Drivetrain getDrivetrain() {
+    return m_drivetrain;
   }
+
 }

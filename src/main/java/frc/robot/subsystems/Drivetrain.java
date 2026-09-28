@@ -9,6 +9,7 @@ import com.pathplanner.lib.config.RobotConfig;
 import com.pathplanner.lib.controllers.PPLTVController;
 import com.pathplanner.lib.util.DriveFeedforwards;
 
+import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.filter.LinearFilter;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
@@ -16,6 +17,7 @@ import edu.wpi.first.math.kinematics.DifferentialDriveKinematics;
 import edu.wpi.first.math.kinematics.DifferentialDriveOdometry;
 import edu.wpi.first.math.kinematics.DifferentialDriveOdometry3d;
 import edu.wpi.first.math.kinematics.DifferentialDriveWheelSpeeds;
+import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.util.sendable.SendableRegistry;
 import edu.wpi.first.wpilibj.BuiltInAccelerometer;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -39,7 +41,7 @@ public class Drivetrain extends SubsystemBase {
   private final Field2d m_field = new Field2d();
 
   // The Romi has the left and right motors set to
-  // PWM channels 0 and 1 respectively
+  // PWM channels 0 and 1 respectively  
   private final Spark m_leftMotor = new Spark(0);
   private final Spark m_rightMotor = new Spark(1);
 
@@ -48,9 +50,11 @@ public class Drivetrain extends SubsystemBase {
   private final Encoder m_leftEncoder = new Encoder(4, 5);
   private final Encoder m_rightEncoder = new Encoder(6, 7);
 
-  // Set up the differential drive controller
-  private final DifferentialDrive m_diffDrive =
-      new DifferentialDrive(m_leftMotor::set, m_rightMotor::set);
+  //0.2 kp, 11.9 kv
+
+  private DrivetrainFeedForwardCalculator rightCalculator = new DrivetrainFeedForwardCalculator(12, 0, 0, 0, 11.7, 0, 12, 12);
+  private DrivetrainFeedForwardCalculator leftCalculator = new DrivetrainFeedForwardCalculator(12, 0, 0, 0, 10.71, 0, 12, 12);
+
 
   // Set up the RomiGyro
   private final DrivetrainAngleCalculator drivetrainAngleCalculator = new DrivetrainAngleCalculator();
@@ -62,8 +66,6 @@ public class Drivetrain extends SubsystemBase {
 
   /** Creates a new Drivetrain. */
   public Drivetrain() {
-    SendableRegistry.addChild(m_diffDrive, m_leftMotor);
-    SendableRegistry.addChild(m_diffDrive, m_rightMotor);
 
     // We need to invert one side of the drivetrain so that positive voltages
     // result in both sides moving forward. Depending on how your robot's
@@ -75,7 +77,7 @@ public class Drivetrain extends SubsystemBase {
     m_rightEncoder.setDistancePerPulse((Math.PI * kWheelDiameterMeters) / kCountsPerRevolution);
     resetEncoders();
 
-    m_odometry = new DifferentialDriveOdometry(Rotation2d.fromDegrees(drivetrainAngleCalculator.getAngle()), getLeftDistanceMeter(), getRightDistanceMeter());
+    m_odometry = new DifferentialDriveOdometry(drivetrainAngleCalculator.getAngle(), getLeftDistanceMeter(), getRightDistanceMeter());
 
     //create the robot config from the GUI settings. This will be used to configure the auto builder.
     RobotConfig config = null;
@@ -99,10 +101,6 @@ public class Drivetrain extends SubsystemBase {
     }, this);
 
     SmartDashboard.putData("Field", m_field);
-  }
-
-  public void arcadeDrive(double xaxisSpeed, double zaxisRotate) {
-    m_diffDrive.arcadeDrive(xaxisSpeed, zaxisRotate);
   }
 
   public void resetEncoders() {
@@ -158,7 +156,7 @@ public class Drivetrain extends SubsystemBase {
   }
 
   public double getAngle() {
-    return drivetrainAngleCalculator.getAngle();
+    return drivetrainAngleCalculator.getAngle().getRadians();
   }
 
   /** Reset the gyro. */
@@ -178,28 +176,47 @@ public class Drivetrain extends SubsystemBase {
   }
 
   public void driveFeedForwards(ChassisSpeeds speeds, DriveFeedforwards driveFeedforwards) {
-      DifferentialDriveWheelSpeeds differentialDriveWheelSpeeds = kinematics.toWheelSpeeds(speeds);
+    DifferentialDriveWheelSpeeds differentialDriveWheelSpeeds = kinematics.toWheelSpeeds(speeds);
 
-      m_diffDrive.tankDrive(differentialDriveWheelSpeeds.leftMetersPerSecond, differentialDriveWheelSpeeds.rightMetersPerSecond);
-    }
+    double leftOutput = leftCalculator.calculate(m_leftEncoder.getRate(), differentialDriveWheelSpeeds.leftMetersPerSecond, "left motor");
+    double rightOutput = rightCalculator.calculate(m_rightEncoder.getRate(), differentialDriveWheelSpeeds.rightMetersPerSecond, "right motor");
+
+    m_leftMotor.setVoltage(leftOutput);
+    m_rightMotor.setVoltage(rightOutput);
+  }
+
+  public void driveFeedForwardsTest(ChassisSpeeds speeds) {
+
+      // DifferentialDriveWheelSpeeds differentialDriveWheelSpeeds = kinematics.toWheelSpeeds(speeds);
+
+      // double leftOutput = leftCalculator.calculate(m_leftEncoder.getRate(), differentialDriveWheelSpeeds.leftMetersPerSecond, "left motor");
+      // double rightOutput = rightCalculator.calculate(m_rightEncoder.getRate(), differentialDriveWheelSpeeds.rightMetersPerSecond, "right motor");
+
+      // m_leftMotor.setVoltage(leftOutput);
+      // m_rightMotor.setVoltage(rightOutput);
+  }
 
 
   @Override
   public void periodic() {
     // This method will be called once per scheduler run
     drivetrainAngleCalculator.update(getLeftDistanceMeter(), getRightDistanceMeter());
-    m_odometry.update(Rotation2d.fromDegrees(drivetrainAngleCalculator.getAngle()), getLeftDistanceMeter(), getRightDistanceMeter());
+    m_odometry.update(drivetrainAngleCalculator.getAngle(), getLeftDistanceMeter(), getRightDistanceMeter());
 
     SmartDashboard.putNumber("DistanceMetersLeft", getLeftDistanceMeter());
     SmartDashboard.putNumber("DistanceMetersRight", getRightDistanceMeter());
 
     m_field.setRobotPose(m_odometry.getPoseMeters());
 
+
+
     double angle = m_odometry.getPoseMeters().getRotation().getDegrees();
+
     SmartDashboard.putNumber("pose x", m_odometry.getPoseMeters().getX());
     SmartDashboard.putNumber("pose y", m_odometry.getPoseMeters().getY());
 
-    SmartDashboard.putNumber("angle", angle);
+    SmartDashboard.putNumber("angle degrees", angle);
+
 
   }
 }
