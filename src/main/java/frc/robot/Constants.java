@@ -38,7 +38,7 @@ public final class Constants {
 
         // Map integer ID to its specific field offset
         private static final Map<Integer, Pose3d> TAG_OFFSETS = Map.of(
-            1, new Pose3d(0.0, 0.0, 0.0, new Rotation3d()), // Example offset for tag ID 1
+            1, new Pose3d(0.0, 2, 0.0, new Rotation3d()), // Example offset for tag ID 1
             2, new Pose3d(1.0, 0.0, 0.0, new Rotation3d()), // Example offset for tag ID 2
             3, new Pose3d(2.0, 0.0, 0.0, new Rotation3d())  // Example offset for tag ID 3
         );
