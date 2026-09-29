@@ -18,8 +18,9 @@ import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.motorcontrol.Spark;
 import edu.wpi.first.wpilibj.romi.RomiGyro;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.subsystems.Vision.VisionConsumer;
 
-public class Drivetrain extends SubsystemBase {
+public class Drivetrain extends SubsystemBase implements VisionConsumer{
   private static final double kCountsPerRevolution = 1440.0;
   private static final double kWheelDiameterInch = 2.75591; // 70 mm
   private static final double kWheelDiameterMeters = kWheelDiameterInch * 0.0254; // 70 mm in meters
